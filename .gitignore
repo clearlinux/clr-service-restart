@@ -1,0 +1,13 @@
+.deps/
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+clr-service-restart
+compile
+config.*
+configure
+depcomp
+install-sh
+main.o
+missing
