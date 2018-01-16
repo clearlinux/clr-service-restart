@@ -92,34 +92,51 @@ int main(int argc, char **argv)
 			}
 
 			for (int i = 2; i < argc; i++) {
-				char *cmd;
+				char *sl;
+				int ret;
 				switch(m) {
 				case ALLOW:
-					if (asprintf(&cmd, "/bin/ln -sf %s /etc/clr-service-restart/%s",
-							argv[i], argv[i]) < 0) {
+					if (asprintf(&sl, "/etc/clr-service-restart/%s",
+							argv[i]) < 0) {
 						perror("asprintf");
+						exit(EXIT_FAILURE);
+					}
+					fprintf(stderr, "ln -sf %s %s\n", argv[i], sl);
+					ret = unlink(sl);
+					ret = symlink(argv[i], sl);
+					if ((ret != 0) && (errno != ENOENT)) {
+						perror(sl);
 						exit(EXIT_FAILURE);
 					}
 					break;
 				case DISALLOW:
-					if (asprintf(&cmd, "/bin/ln -sf /dev/null /etc/clr-service-restart/%s",
+					if (asprintf(&sl, "/etc/clr-service-restart/%s",
 							argv[i]) < 0) {
 						perror("asprintf");
+						exit(EXIT_FAILURE);
+					}
+					fprintf(stderr, "ln -sf /dev/null %s\n", sl);
+					ret = unlink(sl);
+					ret = symlink("/dev/null", sl);
+					if ((ret != 0) && (errno != ENOENT)) {
+						perror(sl);
 						exit(EXIT_FAILURE);
 					}
 					break;
 				case DEFAULT:
-					if (asprintf(&cmd, "/bin/rm -f /etc/clr-service-restart/%s",
+					if (asprintf(&sl, "/etc/clr-service-restart/%s",
 							argv[i]) < 0) {
 						perror("asprintf");
 						exit(EXIT_FAILURE);
 					}
+					fprintf(stderr, "rm -f %s\n", sl);
+					ret = unlink(sl);
+					if ((ret != 0) && (errno != ENOENT)) {
+						perror(sl);
+						exit(EXIT_FAILURE);
+					}
 					break;
 				}
-
-				fprintf(stderr, "%s\n", cmd);
-				if (system(cmd) != 0)
-					exit(EXIT_FAILURE);
 			}
 
 			exit(EXIT_SUCCESS);
