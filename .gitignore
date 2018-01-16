@@ -11,3 +11,5 @@ depcomp
 install-sh
 main.o
 missing
+clr-service-restart.1
+clr-service-restart-*.tar*
