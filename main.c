@@ -32,8 +32,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include <systemd/sd-bus.h>
-
 #define SLICE_DIR "/sys/fs/cgroup/systemd/system.slice"
 
 enum needs_restart {
