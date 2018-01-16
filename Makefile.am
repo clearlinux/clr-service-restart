@@ -1,4 +1,6 @@
 
+EXTRA_DIST = clr-service-restart.1.md
+
 clr-service-restart.1: clr-service-restart.1.md
 	ronn -r $< --pipe > $@
 
