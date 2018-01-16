@@ -57,6 +57,21 @@ void usage(const char* name)
 	exit(EXIT_FAILURE);
 }
 
+void do_telemetry(char *unit)
+{
+	FILE *p = popen("/usr/bin/telem-record-gen"
+			" --class org.clearlinux/clr-service-restart/try-restart-fail"
+			" --severity 4", "w");
+	/* ignore errors here, the system could not have telemetry */
+	if (p) {
+		fprintf(p,
+			"PACKAGE_NAME=%s\n"
+			"PACKAGE_VERSION=%s\n"
+			"unit=%s\n",
+			PACKAGE_NAME, PACKAGE_VERSION, unit);
+		pclose(p);
+	}
+}
 int main(int argc, char **argv)
 {
 	bool noop = false;
@@ -319,7 +334,22 @@ nofilter:
 					fprintf(stderr, "Failed to restart: %s (systemctl returned error code: %d)\n",
 						e->d_name, r);
 					/* insert a telemetry event here */
+					do_telemetry(e->d_name);
 				}
+				char *vrf;
+				if (asprintf(&vrf, "/usr/bin/systemctl --quiet is-failed %s", e->d_name) < 0) {
+					perror("asprintf");
+					exit(EXIT_FAILURE);
+				}
+				int r2 = system(vrf);
+				if (r2 == 0) {
+					fprintf(stderr, "Failed to restart: %s (systemctl reports the unit failed: %d)\n",
+						e->d_name, r);
+					/* insert a telemetry event here */
+					do_telemetry(e->d_name);
+				}
+				free(cmd);
+				free(vrf);
 			}
 		}
 		fclose(f);
