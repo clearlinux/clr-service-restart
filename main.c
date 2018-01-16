@@ -46,6 +46,41 @@ enum mode {
 	DEFAULT
 };
 
+/*
+ * read a symlink, putting the result in dst.
+ * - returns '-1' if the link did not exist, '0' if it did
+ * - on error cancels termination of the program
+ * - caller needs to free the ptr after use if '0' returned
+ */
+static int do_readlink(const char* src, char **dst)
+{
+	struct stat st;
+	if (lstat(src, &st) == -1) {
+		/* not an error, but report this back */
+		if (errno == ENOENT)
+			return -1;
+
+		perror(src);
+		exit(EXIT_FAILURE);
+	}
+
+	*dst = calloc(1, st.st_size + 1);
+	ssize_t ret = readlink(src, *dst, st.st_size + 1);
+	if (ret < 0) {
+		perror("src");
+		exit(EXIT_FAILURE);
+	}
+	if (ret > st.st_size) {
+		perror("st.st_size");
+		exit(EXIT_FAILURE);
+	}
+
+	char *end = *dst + ret;
+	*end = '\0';
+
+	return 0;
+}
+
 static void usage(const char* name)
 {
 	fprintf(stderr,
@@ -194,42 +229,34 @@ int main(int argc, char **argv)
 			perror("asprintf()");
 			exit(EXIT_FAILURE);
 		}
-		ssize_t al = readlink(af, buf, sizeof(buf));
-		free(af);
-		if (al <= 0) {
-			if (errno != ENOENT) {
-				perror("readlink");
+
+		char *link;
+		int ret = do_readlink(af, &link);
+		if (ret == -1) {
+			/* check /usr/share/clr-service-restart to see if it's allowed */
+			if (asprintf(&af, "/usr/share/clr-service-restart/%s", e->d_name) < 1) {
+				perror("asprintf()");
 				exit(EXIT_FAILURE);
+			}
+			ret = do_readlink(af, &link);
+			if (ret == -1) {
+				/* we're not allowed to restart this unit */
+				continue;
 			} else {
-				/* check /usr/share/clr-service-restart to see if it's allowed */
-				if (asprintf(&af, "/usr/share/clr-service-restart/%s", e->d_name) < 1) {
-					perror("asprintf()");
-					exit(EXIT_FAILURE);
+				if (strcmp(link, "/dev/null") == 0) {
+					free(link);
+					/* not allowed */
+					continue;
 				}
-				ssize_t al = readlink(af, buf, sizeof(buf));
-				free(af);
-				if (al <= 0) {
-					if (errno != ENOENT) {
-						perror("readlink");
-						exit(EXIT_FAILURE);
-					} else {
-						/* we're not allowed to restart this unit */
-						continue;
-					}
-				} else {
-					buf[al] = '\0';
-					if (strcmp(buf, "/dev/null") == 0) {
-						/* not allowed */
-						continue;
-					}
-				}
+				free(link);
 			}
 		} else {
-			buf[al] = '\0';
-			if (strcmp(buf, "/dev/null") == 0) {
+			if (strcmp(link, "/dev/null") == 0) {
+				free(link);
 				/* not allowed to restart this unit */
 				continue;
 			}
+			free(link);
 		}
 
 nofilter:
