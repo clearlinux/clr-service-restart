@@ -46,7 +46,7 @@ enum mode {
 	DEFAULT
 };
 
-void usage(const char* name)
+static void usage(const char* name)
 {
 	fprintf(stderr,
 		"Usage: %s [ <options> | allow | disallow | default \"service1\" [ \"service2\" ] ...\n"
@@ -57,7 +57,7 @@ void usage(const char* name)
 	exit(EXIT_FAILURE);
 }
 
-void do_telemetry(char *unit)
+static void do_telemetry(char *unit)
 {
 	FILE *p = popen("/usr/bin/telem-record-gen"
 			" --class org.clearlinux/clr-service-restart/try-restart-fail"
@@ -72,6 +72,7 @@ void do_telemetry(char *unit)
 		pclose(p);
 	}
 }
+
 int main(int argc, char **argv)
 {
 	bool noop = false;
