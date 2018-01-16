@@ -162,6 +162,7 @@ int main(int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}
 		ssize_t al = readlink(af, buf, sizeof(buf));
+		free(af);
 		if (al <= 0) {
 			if (errno != ENOENT) {
 				perror("readlink");
@@ -173,6 +174,7 @@ int main(int argc, char **argv)
 					exit(EXIT_FAILURE);
 				}
 				ssize_t al = readlink(af, buf, sizeof(buf));
+				free(af);
 				if (al <= 0) {
 					if (errno != ENOENT) {
 						perror("readlink");
