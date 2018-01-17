@@ -92,6 +92,37 @@ static void usage(const char* name)
 	exit(EXIT_FAILURE);
 }
 
+/*
+ * Find the unit's location by asking systemctl.
+ * - Returns 0 on success. Terminatest the program on failure
+ * - `path` needs to be freed by the caller.
+ */
+static void do_getpath(char *unit, char **path)
+{
+	char buf[256];
+	char *cmd;
+	if (asprintf(&cmd, "/usr/bin/systemctl show %s --value --property FragmentPath", unit) < 0) {
+		perror("asprintf");
+		exit(EXIT_FAILURE);
+	}
+	FILE *p = popen(cmd, "r");
+	if (!p) {
+		perror(cmd);
+		exit(EXIT_FAILURE);
+	}
+	free(cmd);
+	if (fscanf(p, "%255s", buf) != 1) {
+		fprintf(stderr, "Unable to find unit file for: %s\n", unit);
+		exit(EXIT_FAILURE);
+	}
+	*path = strndup(buf, 256);
+	if (!*path) {
+		perror("strndup");
+		exit(EXIT_FAILURE);
+	}
+	pclose(p);
+}
+
 static void do_telemetry(char *unit)
 {
 	FILE *p = popen("/usr/bin/telem-record-gen"
@@ -143,40 +174,50 @@ int main(int argc, char **argv)
 			}
 
 			for (int i = 2; i < argc; i++) {
+				char *unitpath;
+				char *unit;
+				do_getpath(argv[i], &unitpath);
+				unit = basename(unitpath);
 				char *sl;
 				int ret;
 				switch(m) {
 				case ALLOW:
 					if (asprintf(&sl, "/etc/clr-service-restart/%s",
-							argv[i]) < 0) {
+							unit) < 0) {
 						perror("asprintf");
 						exit(EXIT_FAILURE);
 					}
-					fprintf(stderr, "ln -sf %s %s\n", argv[i], sl);
-					ret = unlink(sl);
-					ret = symlink(argv[i], sl);
+					fprintf(stderr, "ln -sf %s %s\n", unitpath, sl);
+					mkdir("/etc/clr-service-restart",
+						S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+					unlink(sl);
+					ret = symlink(unitpath, sl);
 					if ((ret != 0) && (errno != ENOENT)) {
 						perror(sl);
 						exit(EXIT_FAILURE);
 					}
+					free(sl);
 					break;
 				case DISALLOW:
 					if (asprintf(&sl, "/etc/clr-service-restart/%s",
-							argv[i]) < 0) {
+							unit) < 0) {
 						perror("asprintf");
 						exit(EXIT_FAILURE);
 					}
 					fprintf(stderr, "ln -sf /dev/null %s\n", sl);
-					ret = unlink(sl);
+					mkdir("/etc/clr-service-restart",
+						S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+					unlink(sl);
 					ret = symlink("/dev/null", sl);
 					if ((ret != 0) && (errno != ENOENT)) {
 						perror(sl);
 						exit(EXIT_FAILURE);
 					}
+					free(sl);
 					break;
 				case DEFAULT:
 					if (asprintf(&sl, "/etc/clr-service-restart/%s",
-							argv[i]) < 0) {
+							unit) < 0) {
 						perror("asprintf");
 						exit(EXIT_FAILURE);
 					}
@@ -186,8 +227,10 @@ int main(int argc, char **argv)
 						perror(sl);
 						exit(EXIT_FAILURE);
 					}
+					free(sl);
 					break;
 				}
+				free(unitpath);
 			}
 
 			exit(EXIT_SUCCESS);
