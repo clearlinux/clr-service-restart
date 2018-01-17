@@ -33,6 +33,8 @@
 #include <unistd.h>
 
 #define SLICE_DIR "/sys/fs/cgroup/systemd/system.slice"
+#define SYS_DIR "/usr/share/clr-service-restart"
+#define USER_DIR "/etc/clr-service-restart"
 
 enum needs_restart {
 	NO_RESTART_NEEDED = 0,
@@ -189,14 +191,12 @@ int main(int argc, char **argv)
 				int ret;
 				switch(m) {
 				case ALLOW:
-					if (asprintf(&sl, "/etc/clr-service-restart/%s",
-							unit) < 0) {
+					if (asprintf(&sl, USER_DIR "/%s", unit) < 0) {
 						perror("asprintf");
 						exit(EXIT_FAILURE);
 					}
 					fprintf(stderr, "ln -sf %s %s\n", unitpath, sl);
-					mkdir("/etc/clr-service-restart",
-						S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+					mkdir(USER_DIR, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 					unlink(sl);
 					ret = symlink(unitpath, sl);
 					if ((ret != 0) && (errno != ENOENT)) {
@@ -206,14 +206,12 @@ int main(int argc, char **argv)
 					free(sl);
 					break;
 				case DISALLOW:
-					if (asprintf(&sl, "/etc/clr-service-restart/%s",
-							unit) < 0) {
+					if (asprintf(&sl, USER_DIR "/%s", unit) < 0) {
 						perror("asprintf");
 						exit(EXIT_FAILURE);
 					}
 					fprintf(stderr, "ln -sf /dev/null %s\n", sl);
-					mkdir("/etc/clr-service-restart",
-						S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+					mkdir(USER_DIR, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 					unlink(sl);
 					ret = symlink("/dev/null", sl);
 					if ((ret != 0) && (errno != ENOENT)) {
@@ -223,8 +221,7 @@ int main(int argc, char **argv)
 					free(sl);
 					break;
 				case DEFAULT:
-					if (asprintf(&sl, "/etc/clr-service-restart/%s",
-							unit) < 0) {
+					if (asprintf(&sl, USER_DIR "/%s", unit) < 0) {
 						perror("asprintf");
 						exit(EXIT_FAILURE);
 					}
@@ -272,10 +269,10 @@ int main(int argc, char **argv)
 		if (all)
 			goto nofilter;
 
-		/* check /etc/clr-service-restart to see if it's disallowed or allowed */
+		/* check USER_DIR to see if it's disallowed or allowed */
 		char *af;
 		char buf[PATH_MAX];
-		if (asprintf(&af, "/etc/clr-service-restart/%s", e->d_name) < 1) {
+		if (asprintf(&af, USER_DIR "/%s", e->d_name) < 1) {
 			perror("asprintf()");
 			exit(EXIT_FAILURE);
 		}
@@ -283,8 +280,8 @@ int main(int argc, char **argv)
 		char *link;
 		int ret = do_readlink(af, &link);
 		if (ret == -1) {
-			/* check /usr/share/clr-service-restart to see if it's allowed */
-			if (asprintf(&af, "/usr/share/clr-service-restart/%s", e->d_name) < 1) {
+			/* check SYS_DIR to see if it's allowed */
+			if (asprintf(&af, SYS_DIR "/%s", e->d_name) < 1) {
 				perror("asprintf()");
 				exit(EXIT_FAILURE);
 			}
