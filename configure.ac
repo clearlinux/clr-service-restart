@@ -1,6 +1,6 @@
 
 AC_PREREQ([2.68])
-AC_INIT([clr-service-restart],[2],[auke-jan.h.kok@intel.com],[clr-service-restart],[https://github.com/clearlinux/clr-service-restart])
+AC_INIT([clr-service-restart],[3],[auke-jan.h.kok@intel.com],[clr-service-restart],[https://github.com/clearlinux/clr-service-restart])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror -Wno-portability silent-rules subdir-objects color-tests no-dist-gzip dist-xz])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_FILES([Makefile])
