@@ -125,6 +125,13 @@ static void do_getpath(char *unit, char **path)
 
 static void do_telemetry(char *unit)
 {
+	char *path;
+	do_getpath(unit, &path);
+	int ret = strncmp(path, "/usr/lib/systemd/system/", 24);
+	free(path);
+	if (ret != 0)
+		return;
+
 	FILE *p = popen("/usr/bin/telem-record-gen"
 			" --class org.clearlinux/clr-service-restart/try-restart-fail"
 			" --severity 4", "w");
