@@ -186,6 +186,10 @@ int main(int argc, char **argv)
 				char *unitpath;
 				char *unit;
 				do_getpath(argv[i], &unitpath);
+				if (strcmp(unitpath, "/dev/null") == 0) {
+					fprintf(stderr, "%s is masked, skipping\n", argv[i]);
+					continue;
+				}
 				unit = basename(unitpath);
 				char *sl;
 				int ret;
