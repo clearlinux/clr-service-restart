@@ -392,10 +392,12 @@ nofilter:
 		}
 
 		if (r) {
-			if (r == LIBRARY) {
-				fprintf(stderr, "%s: needs a restart (a library dependency was updated)\n", e->d_name);
-			} else {
-				fprintf(stderr, "%s: needs a restart (the binary was updated)\n", e->d_name);
+			if (noop) {
+				if (r == LIBRARY) {
+					fprintf(stderr, "%s: needs a restart (a library dependency was updated)\n", e->d_name);
+				} else {
+					fprintf(stderr, "%s: needs a restart (the binary was updated)\n", e->d_name);
+				}
 			}
 
 			/* notify */
@@ -426,6 +428,12 @@ nofilter:
 						e->d_name, r);
 					/* insert a telemetry event here */
 					do_telemetry(e->d_name);
+				} else {
+					if (r == LIBRARY) {
+						fprintf(stderr, "%s: restarted (a library dependency was updated)\n", e->d_name);
+					} else {
+						fprintf(stderr, "%s: restarted (the binary was updated)\n", e->d_name);
+					}
 				}
 				free(cmd);
 				free(vrf);
