@@ -31,6 +31,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
 
 #define SLICE_DIR "/sys/fs/cgroup/systemd/system.slice"
 #define SYS_DIR "/usr/share/clr-service-restart"
@@ -409,20 +410,30 @@ nofilter:
 			}
 			if (noop) {
 				fprintf(stderr, "%s\n", cmd);
+				free(cmd);
 			} else {
+				time_t t1, t2;
+				t1 = time(NULL);
+				/* time */
 				int r = system(cmd);
+				t2 = time(NULL) - t1;
+				free(cmd);
+
 				if (r != 0) {
 					fprintf(stderr, "Failed to restart: %s (systemctl returned error code: %d)\n",
 						e->d_name, r);
 					/* insert a telemetry event here */
 					do_telemetry(e->d_name);
 				}
+
 				char *vrf;
 				if (asprintf(&vrf, "/usr/bin/systemctl --quiet is-failed %s", e->d_name) < 0) {
 					perror("asprintf");
 					exit(EXIT_FAILURE);
 				}
 				int r2 = system(vrf);
+				free(vrf);
+
 				if (r2 == 0) {
 					fprintf(stderr, "Failed to restart: %s (systemctl reports the unit failed: %d)\n",
 						e->d_name, r);
@@ -434,9 +445,10 @@ nofilter:
 					} else {
 						fprintf(stderr, "%s: restarted (the binary was updated)\n", e->d_name);
 					}
+					if (t2 > 1)
+						fprintf(stderr, "(Took %d seconds)\n", t2);
 				}
-				free(cmd);
-				free(vrf);
+
 			}
 		}
 		fclose(f);
