@@ -348,7 +348,7 @@ nofilter:
 				perror("readlink");
 				exit(EXIT_FAILURE);
 			}
-			buf[rl] = '\0';
+			buf[rl - 1] = '\0';
 
 			if (rl > 9) {
 				if (strncmp(buf + rl - 9, "(deleted)", 9) == 0) {
