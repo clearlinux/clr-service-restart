@@ -345,6 +345,11 @@ nofilter:
 			ssize_t rl = readlink(exe, buf, sizeof(buf));
 			free(exe);
 			if (rl <= 0) {
+				/*
+				 * Special case: kernel threads - ignore
+				 */
+				if (errno == ENOENT)
+					continue;
 				perror("readlink");
 				exit(EXIT_FAILURE);
 			}
