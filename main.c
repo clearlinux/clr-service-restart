@@ -451,7 +451,7 @@ nofilter:
 						fprintf(stderr, "%s: restarted (the binary was updated)\n", e->d_name);
 					}
 					if (t2 > 1)
-						fprintf(stderr, "(Took %d seconds)\n", t2);
+						fprintf(stderr, "(Took %li seconds)\n", t2);
 				}
 
 			}
