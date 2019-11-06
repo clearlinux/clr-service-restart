@@ -9,6 +9,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: install dependencies
+      run: sudo apt-get install ronn
     - name: autogen
       run: sh autogen.sh
     - name: make
