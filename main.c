@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define SLICE_DIR "/sys/fs/cgroup/systemd/system.slice"
+#define SLICE_DIR "/sys/fs/cgroup/system.slice"
 #define SYS_DIR "/usr/share/clr-service-restart"
 #define USER_DIR "/etc/clr-service-restart"
 
