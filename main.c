@@ -250,15 +250,12 @@ int main(int argc, char **argv)
 
 	/* do restarts */
 	DIR *d = opendir(slice_dir);
-	if (!d) {
+	if (!d && (d = opendir(SLICE_DIR_OLD))) {
 		/* fallback to old location */
 		slice_dir = SLICE_DIR_OLD;
-		fprintf(stderr, "Using old slice location: %s\n", slice_dir);
-		fprintf(stderr, "Please reboot your system to enable the new location\n");
-		d = opendir(slice_dir);
 	}
 	if (!d) {
-		perror("opendir()");
+		fprintf(stderr, "Unable to identify processes to update\n");
 		exit(EXIT_FAILURE);
 	}
 	/* Loop over all the units in the system slice */
