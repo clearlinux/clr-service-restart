@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <time.h>
 
+#define SLICE_DIR_OLD "/sys/fs/cgroup/systemd/system.slice"
 #define SLICE_DIR "/sys/fs/cgroup/system.slice"
 #define SYS_DIR "/usr/share/clr-service-restart"
 #define USER_DIR "/etc/clr-service-restart"
@@ -153,6 +154,7 @@ int main(int argc, char **argv)
 {
 	bool noop = false;
 	bool all = false;
+	char *slice_dir = SLICE_DIR;
 
 	/* parse args */
 	if (argc > 1) {
@@ -247,7 +249,14 @@ int main(int argc, char **argv)
 	}
 
 	/* do restarts */
-	DIR *d = opendir(SLICE_DIR);
+	DIR *d = opendir(slice_dir);
+	if (!d) {
+		/* fallback to old location */
+		slice_dir = SLICE_DIR_OLD;
+		fprintf(stderr, "Using old slice location: %s\n", slice_dir);
+		fprintf(stderr, "Please reboot your system to enable the new location\n");
+		d = opendir(slice_dir);
+	}
 	if (!d) {
 		perror("opendir()");
 		exit(EXIT_FAILURE);
@@ -313,7 +322,7 @@ int main(int argc, char **argv)
 
 nofilter:
 		/* open the tasks file */
-		if (asprintf(&n, SLICE_DIR "/%s/tasks", e->d_name) < 1) {
+		if (asprintf(&n, "%s/%s/tasks", slice_dir, e->d_name) < 1) {
 			perror("asprintf()");
 			exit(EXIT_FAILURE);
 		}
